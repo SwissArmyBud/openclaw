@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Gateway",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["openclaw.mjs", "gateway", "run"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "sourceMaps": true,
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "Rebuild and Debug Gateway",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "openclaw", "--", "gateway", "run"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "sourceMaps": true,
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}
