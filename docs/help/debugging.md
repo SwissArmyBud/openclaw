@@ -178,7 +178,7 @@ The OpenClaw project uses `tsdown` to bundle TypeScript code into JavaScript for
 
 1. Enable debugging support in the `tsdown` configuration and rebuild:
    - Set `OUTPUT_SOURCE_MAPS` to `true` in `tsdown.config.ts`
-   - Run `npx rimraf dist && pnpm build` to rebuild the project
+   - Run `node -e "require('fs').rmSync('dist', {recursive: true, force: true})" && pnpm build` to rebuild the project
 2. Open the `Run and Debug` panel from the Activity Bar or press `Ctrl`+`Shift`+`D`
 3. Select one of the debug configurations from the dropdown
 4. Press the "Start Debugging" button next to the dropdown or press `F5`
