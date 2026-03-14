@@ -4,7 +4,7 @@
     {
       "label": "clean:dist",
       "type": "shell",
-      "command": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
+      "command": "pnpm clean:dist",
       "group": "none",
       "presentation": {
         "echo": true,

@@ -163,31 +163,29 @@ Default file:
 
 ## Debugging in VSCode
 
-### Overview
+Source maps are required to enable debugging in VSCode-based IDEs because many of the generated files end up with hashed names as part of the build process. The included `launch.json` configurations target the Gateway service, but can be adapted quickly for other purposes:
 
-The OpenClaw project uses `tsdown` to bundle TypeScript code into JavaScript for distribution. Source maps are required to enable debugging in VSCode-based IDEs because many of the generated files end up with hashed names as part of scoped builds. Generating source maps is a single change before build time and the included `launch.json` configurations target the Gateway service, but can be adapted quickly for other purposes.
+1. **Rebuild and Debug Gateway** - Debugs the Gateway service after creating a new build
+2. **Debug Gateway** - Debugs the Gateway service of a pre-existing build
 
 ### Setup
 
-#### Included Configurations
+The default **Rebuild and Debug Gateway** configuration is batteries-included, it will automatically delete the `/dist` folder and rebuild the project with debugging enabled:
 
-1. **Debug Gateway** - Debugs the Gateway service of a pre-existing build
-2. **Rebuild and Debug Gateway** - Debugs the Gateway service after creating a new build
+1. Open the **Run and Debug** panel from the Activity Bar or press `Ctrl`+`Shift`+`D`
+2. Ensure **Rebuild and Debug Gateway** is selected in the configuration dropdown, then press the **Start Debugging** button
 
-#### Using the Debugger
+Alternatively - if you prefer to manage the build and debug processes manually:
 
-1. Enable debugging support in the `tsdown` configuration and rebuild:
-   - Set `OUTPUT_SOURCE_MAPS` to `true` in `tsdown.config.ts`
-   - Run `node -e "require('fs').rmSync('dist', {recursive: true, force: true})" && pnpm build` to rebuild the project
-2. Open the `Run and Debug` panel from the Activity Bar or press `Ctrl`+`Shift`+`D`
-3. Select one of the debug configurations from the dropdown
-4. Press the "Start Debugging" button next to the dropdown or press `F5`
-5. Set breakpoints in your TypeScript source files (under `src/` directory)
-   - The debugger will correctly map breakpoints to the compiled JavaScript via source maps
-   - You'll be able to inspect variables, step through code, etc.
+1. Open a terminal and enable source maps: `export OUTPUT_SOURCE_MAPS=1`
+2. In the same terminal, rebuld the project: `pnpm clean:dist && pnpm build`
+3. Select the **Debug Gateway** option in the **Run and Debug** configuration dropdown, then press the **Start Debugging** button
 
-#### Additional Notes
+You can now set breakpoints in your TypeScript source files (`src/` directory) and the debugger will correctly map breakpoints to the compiled JavaScript via source maps. You'll be able to inspect variables, step through code, and examine call stacks as expected.
 
-- If using the "Rebuild and Debug Gateway" option, restarting the debugger will completely delete the `/dist` folder, causing the `run-node.mjs` script to rebuild the project
-- Change the `launch.json` settings for `args` to debug other sections of the project
-- If you need to use the built OpenClaw CLI for other tasks (i.e. `dashboard --no-open` if your debug session spawns a new auth token) you can run it in another shell as `node ./openclaw.mjs` or a shell alias like `alias openclaw-build="node $(pwd)/openclaw.mjs"`
+### Notes
+
+- If using the **"Rebuild and Debug Gateway"** option, each time the debugger is launched it will completely delete the `/dist` folder and trigger the `run-node.mjs` script to rebuild the project
+- If using the **"Debug Gateway"** option, debug sessions can be started and stopped at any time without affecting the `/dist` folder, but you must use a separate terminal process to both enable debugging and manage the build cycle
+- Modify the `launch.json` settings for `args` to debug other sections of the project
+- If you need to use the built OpenClaw CLI for other tasks (i.e. `dashboard --no-open` if your debug session spawns a new auth token), you can execute it in another terminal as `node ./openclaw.mjs` or create a shell alias like `alias openclaw-build="node $(pwd)/openclaw.mjs"`

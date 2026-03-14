@@ -3,7 +3,7 @@ import { defineConfig } from "tsdown";
 const env = {
   NODE_ENV: "production",
 };
-const OUTPUT_SOURCE_MAPS = false;
+const OUTPUT_SOURCE_MAPS = process.env.OUTPUT_SOURCE_MAPS === "1";
 
 function buildInputOptions(options: { onLog?: unknown; [key: string]: unknown }) {
   if (process.env.OPENCLAW_BUILD_VERBOSE === "1") {
