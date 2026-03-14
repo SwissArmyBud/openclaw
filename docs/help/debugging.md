@@ -173,13 +173,16 @@ Source maps are required to enable debugging in VSCode-based IDEs because many o
 The default **Rebuild and Debug Gateway** configuration is batteries-included, it will automatically delete the `/dist` folder and rebuild the project with debugging enabled:
 
 1. Open the **Run and Debug** panel from the Activity Bar or press `Ctrl`+`Shift`+`D`
-2. Ensure **Rebuild and Debug Gateway** is selected in the configuration dropdown, then press the **Start Debugging** button
+2. In the IDE, ensure **Rebuild and Debug Gateway** is selected in the configuration dropdown and then press the **Start Debugging** button
 
 Alternatively - if you prefer to manage the build and debug processes manually:
 
-1. Open a terminal and enable source maps: `export OUTPUT_SOURCE_MAPS=1`
-2. In the same terminal, rebuld the project: `pnpm clean:dist && pnpm build`
-3. Select the **Debug Gateway** option in the **Run and Debug** configuration dropdown, then press the **Start Debugging** button
+1. Open a terminal and enable source maps:
+   - **Linux/macOS**: `export OUTPUT_SOURCE_MAPS=1`
+   - **Windows (PowerShell)**: `$env:OUTPUT_SOURCE_MAPS="1"`
+   - **Windows (CMD)**: `set OUTPUT_SOURCE_MAPS=1`
+2. In the same terminal, rebuild the project: `pnpm clean:dist && pnpm build`
+3. In the IDE, select the **Debug Gateway** option in the **Run and Debug** configuration dropdown and then press the **Start Debugging** button
 
 You can now set breakpoints in your TypeScript source files (`src/` directory) and the debugger will correctly map breakpoints to the compiled JavaScript via source maps. You'll be able to inspect variables, step through code, and examine call stacks as expected.
 
