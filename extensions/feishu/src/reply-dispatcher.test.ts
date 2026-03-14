@@ -25,40 +25,27 @@ vi.mock("./typing.js", () => ({
   addTypingIndicator: addTypingIndicatorMock,
   removeTypingIndicator: removeTypingIndicatorMock,
 }));
-vi.mock("./streaming-card.js", () => ({
-  mergeStreamingText: (previousText: string | undefined, nextText: string | undefined) => {
-    const previous = typeof previousText === "string" ? previousText : "";
-    const next = typeof nextText === "string" ? nextText : "";
-    if (!next) {
-      return previous;
-    }
-    if (!previous || next === previous) {
-      return next;
-    }
-    if (next.startsWith(previous)) {
-      return next;
-    }
-    if (previous.startsWith(next)) {
-      return previous;
-    }
-    return `${previous}${next}`;
-  },
-  FeishuStreamingSession: class {
-    active = false;
-    start = vi.fn(async () => {
-      this.active = true;
-    });
-    update = vi.fn(async () => {});
-    close = vi.fn(async () => {
-      this.active = false;
-    });
-    isActive = vi.fn(() => this.active);
+vi.mock("./streaming-card.js", async () => {
+  const actual = await vi.importActual<typeof import("./streaming-card.js")>("./streaming-card.js");
+  return {
+    mergeStreamingText: actual.mergeStreamingText,
+    FeishuStreamingSession: class {
+      active = false;
+      start = vi.fn(async () => {
+        this.active = true;
+      });
+      update = vi.fn(async () => {});
+      close = vi.fn(async () => {
+        this.active = false;
+      });
+      isActive = vi.fn(() => this.active);
 
-    constructor() {
-      streamingInstances.push(this);
-    }
-  },
-}));
+      constructor() {
+        streamingInstances.push(this);
+      }
+    },
+  };
+});
 
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 
@@ -522,5 +509,51 @@ describe("createFeishuReplyDispatcher streaming behavior", () => {
         replyInThread: true,
       }),
     );
+  });
+
+  it("recovers streaming after start() throws (HTTP 400)", async () => {
+    const errorMock = vi.fn();
+    let shouldFailStart = true;
+
+    // Intercept streaming instance creation to make first start() reject
+    const origPush = streamingInstances.push;
+    streamingInstances.push = function (this: any[], ...args: any[]) {
+      if (shouldFailStart) {
+        args[0].start = vi
+          .fn()
+          .mockRejectedValue(new Error("Create card request failed with HTTP 400"));
+        shouldFailStart = false;
+      }
+      return origPush.apply(this, args);
+    } as any;
+
+    try {
+      createFeishuReplyDispatcher({
+        cfg: {} as never,
+        agentId: "agent",
+        runtime: { log: vi.fn(), error: errorMock } as never,
+        chatId: "oc_chat",
+      });
+
+      const options = createReplyDispatcherWithTypingMock.mock.calls[0]?.[0];
+
+      // First deliver with markdown triggers startStreaming - which will fail
+      await options.deliver({ text: "```ts\nconst x = 1\n```" }, { kind: "block" });
+
+      // Wait for the async error to propagate
+      await vi.waitFor(() => {
+        expect(errorMock).toHaveBeenCalledWith(expect.stringContaining("streaming start failed"));
+      });
+
+      // Second deliver should create a NEW streaming session (not stuck)
+      await options.deliver({ text: "```ts\nconst y = 2\n```" }, { kind: "final" });
+
+      // Two instances created: first failed, second succeeded and closed
+      expect(streamingInstances).toHaveLength(2);
+      expect(streamingInstances[1].start).toHaveBeenCalled();
+      expect(streamingInstances[1].close).toHaveBeenCalled();
+    } finally {
+      streamingInstances.push = origPush;
+    }
   });
 });
