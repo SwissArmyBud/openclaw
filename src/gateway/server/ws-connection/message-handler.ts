@@ -520,6 +520,11 @@ export function attachGatewayWsMessageHandler(params: {
             authOk,
             authMethod,
           });
+          const preserveInsecureLocalControlUiScopes =
+            isControlUi &&
+            controlUiAuthPolicy.allowInsecureAuthConfigured &&
+            isLocalClient &&
+            (authMethod === "token" || authMethod === "password");
           const decision = evaluateMissingDeviceIdentity({
             hasDeviceIdentity: Boolean(device),
             role,
@@ -531,10 +536,15 @@ export function attachGatewayWsMessageHandler(params: {
             hasSharedAuth,
             isLocalClient,
           });
-          // Shared token/password auth can bypass pairing for trusted operators, but
-          // device-less backend clients must not self-declare scopes. Control UI
-          // keeps its explicitly allowed device-less scopes on the allow path.
-          if (!device && (!isControlUi || decision.kind !== "allow")) {
+          // Shared token/password auth can bypass pairing for trusted operators.
+          // Device-less clients only keep self-declared scopes on the explicit
+          // allow path, including trusted token-authenticated backend operators.
+          if (
+            !device &&
+            (decision.kind !== "allow" ||
+              (!preserveInsecureLocalControlUiScopes &&
+                (authMethod === "token" || authMethod === "password" || trustedProxyAuthOk)))
+          ) {
             clearUnboundScopes();
           }
           if (decision.kind === "allow") {
@@ -674,10 +684,7 @@ export function attachGatewayWsMessageHandler(params: {
           authOk,
           authMethod,
         });
-        // auth.mode=none disables all authentication — device pairing is an
-        // auth mechanism and must also be skipped when the operator opted out.
         const skipPairing =
-          resolvedAuth.mode === "none" ||
           shouldSkipBackendSelfPairing({
             connectParams,
             isLocalClient,
@@ -685,7 +692,12 @@ export function attachGatewayWsMessageHandler(params: {
             sharedAuthOk,
             authMethod,
           }) ||
-          shouldSkipControlUiPairing(controlUiAuthPolicy, role, trustedProxyAuthOk);
+          shouldSkipControlUiPairing(
+            controlUiAuthPolicy,
+            role,
+            trustedProxyAuthOk,
+            resolvedAuth.mode,
+          );
         if (device && devicePublicKey && !skipPairing) {
           const formatAuditList = (items: string[] | undefined): string => {
             if (!items || items.length === 0) {
